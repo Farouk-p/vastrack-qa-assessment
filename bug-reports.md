@@ -64,13 +64,13 @@ This is of high priority because it directly affects a core financial feature.
 
 The courier accept endpoint (`POST /api/v1/courier/deliveries/{deliveryId}/accept`) does not reject repeated calls. After a courier has accepted a delivery and it is assigned to them, calling the same endpoint again is accepted again and a new `assigned` entry is added to the delivery history every time. Each repeated call also moves the delivery amount again from the business wallet into the Held section. After the courier completes the delivery, the courier is paid only from the first assignment, and the duplicate amounts stay stuck in Held. The API should recognise that the delivery is already assigned to the courier and return a message saying so, without changing the history or the wallet.
 
-| Field           | Value                                                                                                       |
-| --------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Component**   | Courier deliveries, `POST /api/v1/courier/deliveries/{deliveryId}/accept`                                   |
-| **Environment** | Vastrack QA sandbox Environment, run locally (`http://localhost:4000`), tested with Postman. Role: courier. |
-| **Severity**    | High                                                                                                        |
-| **Priority**    | High                                                                                                        |
-| **Type**        | Functional / state handling (hypothesis: missing check that the delivery is already assigned) and wallet / financial integrity               |
+| Field           | Value                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Component**   | Courier deliveries, `POST /api/v1/courier/deliveries/{deliveryId}/accept`                                                      |
+| **Environment** | Vastrack QA sandbox Environment, run locally (`http://localhost:4000`), tested with Postman. Role: courier.                    |
+| **Severity**    | High                                                                                                                           |
+| **Priority**    | High                                                                                                                           |
+| **Type**        | Functional / state handling (hypothesis: missing check that the delivery is already assigned) and wallet / financial integrity |
 
 ### Steps to reproduce
 
@@ -99,7 +99,7 @@ The courier accept endpoint (`POST /api/v1/courier/deliveries/{deliveryId}/accep
 
 ### Screen Recording
 
-To be added.
+https://jam.dev/c/a953e8a6-4ff6-4b38-92a8-ab5109949f62
 
 ### Why this severity and priority
 
