@@ -64,13 +64,13 @@ This is of high priority because it directly affects a core financial feature.
 
 The courier accept endpoint (`POST /api/v1/courier/deliveries/{deliveryId}/accept`) does not reject repeated calls. After a courier has accepted a delivery and it is assigned to them, calling the same endpoint again is accepted again and a new `assigned` entry is added to the delivery history every time. The API should recognise that the delivery is already assigned to the courier and return a message saying so, without changing the history.
 
-| Field           | Value                                                                                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------ |
-| **Component**   | Courier deliveries, `POST /api/v1/courier/deliveries/{deliveryId}/accept`                              |
+| Field           | Value                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Component**   | Courier deliveries, `POST /api/v1/courier/deliveries/{deliveryId}/accept`                                   |
 | **Environment** | Vastrack QA sandbox Environment, run locally (`http://localhost:4000`), tested with Postman. Role: courier. |
-| **Severity**    | Medium                                                                                                 |
-| **Priority**    | Medium                                                                                                 |
-| **Type**        | Functional / state handling (hypothesis: missing check that the delivery is already assigned)          |
+| **Severity**    | Medium                                                                                                      |
+| **Priority**    | Medium                                                                                                      |
+| **Type**        | Functional / state handling (hypothesis: missing check that the delivery is already assigned)               |
 
 ### Steps to reproduce
 
@@ -99,7 +99,7 @@ To be added.
 ### Why this severity and priority
 
 **Severity: Medium**
-The delivery still reaches the courier, but the history becomes inaccurate and could confuse support, auditing and tracking shown to the business.
+The delivery still reaches the courier, but the history becomes inaccurate and could confuse support, or any party that will audit the history
 
 **Priority: Medium**
-The fix is small (check the delivery status before assigning), but it does not block the core flow, so it can be fixed after the money-related bug.
+The priority is medium because it does not block the core flow, but it also needs to be fixed.
