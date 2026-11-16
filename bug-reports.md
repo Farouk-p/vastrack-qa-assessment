@@ -58,19 +58,19 @@ This is of high priority because it directly affects a core financial feature.
 
 ---
 
-## BUG-02: Accepting an already accepted delivery keeps adding "assigned" entries to the tracking history
+## BUG-02: Accepting an already accepted delivery can be repeated, adding duplicate "assigned" entries and holding duplicate funds from the business wallet
 
 ### Bug description
 
-The courier accept endpoint (`POST /api/v1/courier/deliveries/{deliveryId}/accept`) does not reject repeated calls. After a courier has accepted a delivery and it is assigned to them, calling the same endpoint again is accepted again and a new `assigned` entry is added to the delivery history every time. The API should recognise that the delivery is already assigned to the courier and return a message saying so, without changing the history.
+The courier accept endpoint (`POST /api/v1/courier/deliveries/{deliveryId}/accept`) does not reject repeated calls. After a courier has accepted a delivery and it is assigned to them, calling the same endpoint again is accepted again and a new `assigned` entry is added to the delivery history every time. Each repeated call also moves the delivery amount again from the business wallet into the Held section. After the courier completes the delivery, the courier is paid only from the first assignment, and the duplicate amounts stay stuck in Held. The API should recognise that the delivery is already assigned to the courier and return a message saying so, without changing the history or the wallet.
 
 | Field           | Value                                                                                                       |
 | --------------- | ----------------------------------------------------------------------------------------------------------- |
 | **Component**   | Courier deliveries, `POST /api/v1/courier/deliveries/{deliveryId}/accept`                                   |
 | **Environment** | Vastrack QA sandbox Environment, run locally (`http://localhost:4000`), tested with Postman. Role: courier. |
-| **Severity**    | Medium                                                                                                      |
-| **Priority**    | Medium                                                                                                      |
-| **Type**        | Functional / state handling (hypothesis: missing check that the delivery is already assigned)               |
+| **Severity**    | High                                                                                                        |
+| **Priority**    | High                                                                                                        |
+| **Type**        | Functional / state handling (hypothesis: missing check that the delivery is already assigned) and wallet / financial integrity               |
 
 ### Steps to reproduce
 
@@ -79,17 +79,22 @@ The courier accept endpoint (`POST /api/v1/courier/deliveries/{deliveryId}/accep
 3. `POST /api/v1/courier/deliveries/{deliveryId}/accept` with `Authorization: Bearer <courier token>`. The delivery is assigned to the courier.
 4. Call the same `POST /api/v1/courier/deliveries/{deliveryId}/accept` request again, one or more times.
 5. `GET /api/v1/deliveries/{deliveryId}/tracking` as the business and check the history.
+6. Check the business wallet balance and Held amount after each repeated call.
+7. Complete the delivery as the courier, then check the business wallet and the courier wallet again.
 
 ### Expected result
 
 - The first call assigns the delivery to the courier.
 - On every subsequent call, the API rejects the request with a message showing that the courier has already been assigned to the delivery.
 - The delivery history is not changed by the repeated calls.
+- No extra money is moved from the business wallet into Held. Only the amount for the first assignment is held.
 
 ### Actual result
 
 - The repeated calls are accepted.
 - The history keeps getting populated with the `assigned` status, one extra entry for each call, showing that the courier is assigned to the delivery again.
+- Each repeated call moves the delivery amount again from the business wallet into the Held section.
+- After the courier completes the delivery, the courier is paid based on the first assignment only. The duplicate amounts stay stuck in Held and are never released or returned.
 - No message is returned to say the courier is already assigned.
 
 ### Screen Recording
@@ -98,8 +103,8 @@ To be added.
 
 ### Why this severity and priority
 
-**Severity: Medium**
-The delivery still reaches the courier, but the history becomes inaccurate and could confuse support, or any party that will audit the history
+**Severity: High**
+Beyond the inaccurate history, repeated calls take real money out of the business wallet. The duplicate amounts are locked in Held permanently, so the business loses access to its funds and the wallet no longer reconciles with the deliveries. Nothing is lost on the courier side, but the business is affected financially.
 
-**Priority: Medium**
-The priority is medium because it does not block the core flow, but it also needs to be fixed.
+**Priority: High**
+It affects wallet balances, can be triggered by simply repeating one request (for example a double click or a retry), and the fix is likely small (reject the call if the delivery is already assigned). It should be fixed before release, and the funds already stuck in Held need to be corrected.
