@@ -1,0 +1,824 @@
+{
+  "info": {
+    "_postman_id": "5ab4a97c-c2f7-42c7-9ed4-ff10a6d77db1",
+    "name": "Vastrack Delivery API - Wallet and Delivery Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "9351741"
+  },
+  "item": [
+    {
+      "name": "0. Setup",
+      "item": [
+        {
+          "name": "Login as business",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login returns 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Validate Successful Login for a Business and Response contains auth token\", () => pm.expect(response.token).to.be.a(\"string\").and.not.empty);",
+                  "",
+                  "pm.environment.set(\"businessToken\", response.token);",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{businessEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as courier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login returns 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Validate Successful Login for a Courier and Response contains auth token\", () => pm.expect(response.token).to.be.a(\"string\").and.not.empty);",
+                  "",
+                  "pm.environment.set(\"courierToken\", response.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{courierEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. Wallet top-up (positive)",
+      "item": [
+        {
+          "name": "1.1 Get balance before top-up",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Validate balance returned is a number\", () => pm.expect(response.balance).to.be.a(\"number\"));",
+                  "",
+                  "pm.environment.set(\"balanceBefore\", response.balance);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/wallet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "wallet"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Top up wallet with a valid amount",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Capture the wallet balance right before the top-up request is sent",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get(\"baseUrl\") + \"/api/v1/wallet\",",
+                  "    method: \"GET\",",
+                  "    header: {",
+                  "        \"Content-Type\": \"application/json\",",
+                  "        \"Authorization\": \"Bearer \" + pm.environment.get(\"businessToken\")",
+                  "    }",
+                  "}, (err, res) => {",
+                  "    pm.environment.set(\"balanceBefore\", res.json().balance);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const topUpAmunt = Number(pm.environment.get(\"topUpAmount\"));",
+                  "const balanceBefore = Number(pm.environment.get(\"balanceBefore\"));",
+                  "const balanceAfterTopUp = Number(pm.response.json().balance);",
+                  "",
+                  "",
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Validate wallets balance increases accordingly after top up\", () => {",
+                  "    pm.expect(balanceAfterTopUp).to.eql(balanceBefore + topUpAmunt);",
+                  "});",
+                  "",
+                  "",
+                  "pm.environment.set(\"balanceAfterTopUp\", balanceAfterTopUp);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": {{topUpAmount}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/wallet/top-up",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "wallet",
+                "top-up"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Delivery journey (happy path)",
+      "item": [
+        {
+          "name": "2.1 Get a quote",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const weight = Number(pm.environment.get(\"weightKg\"));",
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Verify quote was successfully created and quote_id generated\", () => {",
+                  "    pm.expect(response.quote_id).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Verify fee equals 1500 + 200 x weight\", () => pm.expect(response.fee).to.eql(1500 + 200 * weight));",
+                  "",
+                  "pm.environment.set(\"quoteId\", response.quote_id);",
+                  "pm.environment.set(\"fee\", response.fee);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pickup\": {\n        \"name\": \"Farouk\",\n        \"phone\": \"08031234567\",\n        \"address\": \"Ikeja\"\n    },\n    \"dropoff\": {\n        \"name\": \"Abiodun\",\n        \"phone\": \"08031234567\",\n        \"address\": \"Lekki\"\n    },\n    \"package\": {\n        \"description\": \"Grey watch\",\n        \"weight_kg\": {{weightKg}}\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/deliveries/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "deliveries",
+                "quote"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Create a draft delivery",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Verify delivery was successfully created and delivery_id generated\", () => {",
+                  "    pm.expect(response.id).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Verify delivery status is draft\", () => pm.expect(response.status).to.eql(\"draft\"));",
+                  "pm.test(\"Verify delivery fee matches the quote fee\", () => pm.expect(response.fee).to.eql(Number(pm.environment.get(\"fee\"))));",
+                  "",
+                  "pm.environment.set(\"deliveryId\", response.id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup\":  { \"name\": \"Farouk\",  \"phone\": \"08031234567\", \"address\": \"Ikeja\" },\n  \"dropoff\": { \"name\": \"Abiodun\", \"phone\": \"08031234567\", \"address\": \"Lekki\" },\n  \"package\": { \"description\": \"Grey watch\", \"weight_kg\": {{weightKg}} },\n  \"quote_id\": \"{{quoteId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/deliveries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "deliveries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Publish the delivery",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Verify delivery status is pending after publish\", () => pm.expect(response.status).to.eql(\"pending\"));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/deliveries/{{deliveryId}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "deliveries",
+                "{{deliveryId}}",
+                "publish"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Courier accepts the delivery",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Capture held amount and balance before the courier accepts",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get(\"baseUrl\") + \"/api/v1/wallet\",",
+                  "    method: \"GET\",",
+                  "    header: {",
+                  "        \"Content-Type\": \"application/json\",",
+                  "        \"Authorization\": \"Bearer \" + pm.environment.get(\"businessToken\")",
+                  "    }",
+                  "}, (err, res) => {",
+                  "    const response = res.json();",
+                  "    pm.environment.set(\"heldBeforeAccept\", response.held);",
+                  "    pm.environment.set(\"balanceBeforeAccept\", response.balance);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Verify delivery status is assigned\", () => pm.expect(response.status).to.eql(\"assigned\"));",
+                  "pm.test(\"Verify a courier is attached to the delivery\", () => pm.expect(response.courier_id).to.be.a(\"string\"));",
+                  "",
+                  "const fee = Number(pm.environment.get(\"fee\"));",
+                  "const heldBefore = Number(pm.environment.get(\"heldBeforeAccept\"));",
+                  "const balanceBefore = Number(pm.environment.get(\"balanceBeforeAccept\"));",
+                  "",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get(\"baseUrl\") + \"/api/v1/wallet\",",
+                  "    method: \"GET\",",
+                  "    header: {",
+                  "        \"Content-Type\": \"application/json\",",
+                  "        \"Authorization\": \"Bearer \" + pm.environment.get(\"businessToken\")",
+                  "    }",
+                  "}, (err, res) => {",
+                  "    const wallet = res.json();",
+                  "    pm.test(\"Verify held amount increased by the delivery fee after courier accepted\", () => {",
+                  "        pm.expect(wallet.held).to.eql(heldBefore + fee);",
+                  "    });",
+                  "    pm.test(\"Verify wallet balance decreased by the delivery fee after courier accepted\", () => {",
+                  "        pm.expect(wallet.balance).to.eql(balanceBefore - fee);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{courierToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/courier/deliveries/{{deliveryId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "courier",
+                "deliveries",
+                "{{deliveryId}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Courier picks up the package",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Verify delivery status is picked_up\", () => pm.expect(response.status).to.eql(\"picked_up\"));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{courierToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/courier/deliveries/{{deliveryId}}/pickup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "courier",
+                "deliveries",
+                "{{deliveryId}}",
+                "pickup"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.6 Business gets the delivery code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Verify delivery code is returned\", () => pm.expect(response.code).to.be.a(\"string\").and.not.empty);",
+                  "",
+                  "pm.environment.set(\"deliveryCode\", response.code);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/deliveries/{{deliveryId}}/code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "deliveries",
+                "{{deliveryId}}",
+                "code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.7 Courier delivers with the code",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Capture held amount and balance before the courier delivers",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get(\"baseUrl\") + \"/api/v1/wallet\",",
+                  "    method: \"GET\",",
+                  "    header: {",
+                  "        \"Content-Type\": \"application/json\",",
+                  "        \"Authorization\": \"Bearer \" + pm.environment.get(\"businessToken\")",
+                  "    }",
+                  "}, (err, res) => {",
+                  "    const response = res.json();",
+                  "    pm.environment.set(\"heldBeforeDeliver\", response.held);",
+                  "    pm.environment.set(\"balanceBeforeDeliver\", response.balance);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Verify delivery status is delivered\", () => pm.expect(response.status).to.eql(\"delivered\"));",
+                  "",
+                  "const fee = Number(pm.environment.get(\"fee\"));",
+                  "const heldBefore = Number(pm.environment.get(\"heldBeforeDeliver\"));",
+                  "const balanceBefore = Number(pm.environment.get(\"balanceBeforeDeliver\"));",
+                  "",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get(\"baseUrl\") + \"/api/v1/wallet\",",
+                  "    method: \"GET\",",
+                  "    header: {",
+                  "        \"Content-Type\": \"application/json\",",
+                  "        \"Authorization\": \"Bearer \" + pm.environment.get(\"businessToken\")",
+                  "    }",
+                  "}, (err, res) => {",
+                  "    const wallet = res.json();",
+                  "    pm.test(\"Verify held amount was released after delivery\", () => {",
+                  "        pm.expect(wallet.held).to.eql(heldBefore - fee);",
+                  "    });",
+                  "    pm.test(\"Verify balance remaining is unchanged after settlement (fee charged exactly once)\", () => {",
+                  "        pm.expect(wallet.balance).to.eql(balanceBefore);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{courierToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"code\": \"{{deliveryCode}}\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/courier/deliveries/{{deliveryId}}/deliver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "courier",
+                "deliveries",
+                "{{deliveryId}}",
+                "deliver"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.8 Tracking shows the full history",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Verify status code is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Verify current tracking status is delivered\", () => pm.expect(response.status).to.eql(\"delivered\"));",
+                  "pm.test(\"Verify tracking history follows the expected order\", () => {",
+                  "    pm.expect(response.history.map(h => h.status)).to.eql([\"draft\", \"pending\", \"assigned\", \"picked_up\", \"delivered\"]);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/deliveries/{{deliveryId}}/tracking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "deliveries",
+                "{{deliveryId}}",
+                "tracking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Wallet top-up negative cases",
+      "item": [
+        {
+          "name": "3.1 Top up with a negative amount is rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Negative amount is rejected with 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error body has a validation_error code\", () => {",
+                  "    pm.expect(pm.response.json().error.code).to.eql(\"validation_error\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{businessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"amount\": -5 }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/wallet/top-up",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "wallet",
+                "top-up"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Top up without a token is rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"amount\": 1000 }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/wallet/top-up",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "wallet",
+                "top-up"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
